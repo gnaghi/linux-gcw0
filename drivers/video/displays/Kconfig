@@ -4,15 +4,20 @@
 
 menu "Display Device Drivers"
 
+choice
+	prompt "Select LCD driver"
+
 config PANEL_NT39016
-	# TODO: Switch to tristate once the driver is a module.
 	bool "Novatek NT39016 based panel"
 	help
-	  Select this if you are using a Novatek NT39016 LCD driver IC.
+		Select this if you are using a Novatek NT39016 LCD driver IC."
 
 config PANEL_HX8363
-	# TODO: Switch to tristate once the driver is a module.
 	bool "Himax HX8363 based panel"
+
 	help
 	  Select this if you are using a Himax HX8363 LCD driver IC.
+
+endchoice
+
 endmenu

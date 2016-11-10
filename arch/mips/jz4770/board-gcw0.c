@@ -40,6 +40,7 @@
 #include <linux/regulator/machine.h>
 #include <video/jzpanel.h>
 #include <video/panel-nt39016.h>
+#include <video/panel-hx8363.h>
 #include <video/platform_lcd.h>
 
 #include <asm/mach-jz4770/gpio.h>
@@ -53,12 +54,30 @@ static struct regulator *gcw0_lcd_regulator_18v;
 static void *gcw0_lcd_panel;
 static bool gcw0_lcd_powered;
 
+#ifdef CONFIG_PANEL_HX8363
+static struct hx8363_platform_data gcw0_panel_pdata = {
+	.gpio_reset		= JZ_GPIO_PORTE(2),
+	.gpio_clock		= JZ_GPIO_PORTE(15),
+	.gpio_enable	= JZ_GPIO_PORTE(16),
+	.gpio_data		= JZ_GPIO_PORTE(17),
+};
+#define LCD_panel_ops hx8363_panel_ops
+
+#endif
+
+#ifdef CONFIG_PANEL_NT39016
+
 static struct nt39016_platform_data gcw0_panel_pdata = {
 	.gpio_reset		= JZ_GPIO_PORTE(2),
 	.gpio_clock		= JZ_GPIO_PORTE(15),
-	.gpio_enable		= JZ_GPIO_PORTE(16),
+	.gpio_enable	= JZ_GPIO_PORTE(16),
 	.gpio_data		= JZ_GPIO_PORTE(17),
 };
+
+#define LCD_panel_ops nt39016_panel_ops
+
+#endif
+
 
 #define GPIO_PANEL_SOMETHING	JZ_GPIO_PORTF(0)
 
@@ -89,7 +108,7 @@ static int gcw0_lcd_probe(struct plat_lcd_data *pdata)
 		}
 	}
 
-	ret = nt39016_panel_ops.init(&gcw0_lcd_panel, dev, &gcw0_panel_pdata);
+	ret = LCD_panel_ops.init(&gcw0_lcd_panel, dev, &gcw0_panel_pdata);
 	if (ret)
 		return ret;
 
@@ -117,9 +136,9 @@ static void gcw0_lcd_set_power(struct plat_lcd_data *pdata, unsigned int power)
 			dev_err(dev, "Failed to enable 3.3V regulator\n");
 		if (regulator_enable(gcw0_lcd_regulator_18v))
 			dev_err(dev, "Failed to enable 1.8V regulator\n");
-		nt39016_panel_ops.enable(gcw0_lcd_panel);
+		LCD_panel_ops.enable(gcw0_lcd_panel);
 	} else {
-		nt39016_panel_ops.disable(gcw0_lcd_panel);
+		LCD_panel_ops.disable(gcw0_lcd_panel);
 		if (regulator_disable(gcw0_lcd_regulator_18v))
 			dev_err(dev, "Failed to disable 1.8V regulator\n");
 		if (regulator_disable(gcw0_lcd_regulator_33v))
