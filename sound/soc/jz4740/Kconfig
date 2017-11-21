@@ -30,7 +30,7 @@ config SND_JZ4740_SOC_QI_LB60
 
 config SND_JZ4770_SOC_GCW0
 	tristate "SoC Audio support for GCW Zero"
-	depends on JZ4770_GCW0
+	depends on JZ4770_GCW0 || JZ4770_GCW0_HI
 	select SND_JZ4740_SOC_I2S
 	select SND_SOC_JZ4770_CODEC
 	default y

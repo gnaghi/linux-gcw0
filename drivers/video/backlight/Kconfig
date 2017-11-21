@@ -157,6 +157,13 @@ config LCD_NT39016
 	  If you have a panel contolled by a Novatek NT39016 LCD driver IC,
 	  say Y to enable and configure it.
 
+config LCD_HX8363
+	tristate "Himax HX-8363 LCD Driver"
+	depends on SPI
+	help
+	  If you have a HX-8363 LCD panel, say Y to enable its LCD control
+	  driver.
+
 endif # LCD_CLASS_DEVICE
 
 #

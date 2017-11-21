@@ -83,6 +83,32 @@
 #define HX8369_SET_GIP				0xd5
 #define HX8369_SET_GAMMA_CURVE_RELATED		0xe0
 
+
+
+#define HX8363_SET_EXTENSION_COMMAND		0xb9
+#define HX8363_SET_POWER					0xb1
+
+#define HX8363_SET_COLMOD					0x3A
+#define HX8363_SET_MADCTL					0x36
+#define HX8363_SET_SOURCE					0xC0
+#define HX8363_SET_POWER_OPTION				0xBF
+#define HX8363_SET_RGB_IF					0xB3
+#define HX8363_SET_DISPLAY_WAVEFORM_CYC		0xB4
+#define HX8363_SET_VCOM						0xB6
+#define HX8363_SET_PANEL					0xCC
+#define HX8363_SET_GAMMA_CURVE_RELATED		0xE0
+#define HX8363_EXIT_SLEEP_MODE				0x11
+#define HX8363_SET_DISPLAY_ON				0x29
+
+#define HX8363_SET_DISPLAY_BRIGHTNESS		0x51
+#define HX8363_WRITE_CABC_DISPLAY_VALUE		0x53
+#define HX8363_WRITE_CABC_BRIGHT_CTRL		0x55
+#define HX8363_WRITE_CABC_MIN_BRIGHTNESS	0x5e
+#define HX8363_SET_DISPLAY_MODE			0xb2
+#define HX8363_SET_GIP				0xd5
+
+
+
 struct hx8357_data {
 	unsigned		im_pins[HX8357_NUM_IM_PINS];
 	unsigned		reset;
@@ -210,6 +236,69 @@ static u8 hx8369_seq_gamma_curve_related[] = {
 	0x00, 0x0d, 0x19, 0x2f, 0x3b, 0x3d, 0x2e, 0x4a, 0x08, 0x0e, 0x0f,
 	0x14, 0x16, 0x14, 0x14, 0x14, 0x1e,
 };
+
+
+
+//HX8363A init commands
+
+static u8 hx8363_seq_extension_command[] = {
+	HX8363_SET_EXTENSION_COMMAND, 0xff, 0x83, 0x63,
+};
+
+static u8 hx8363_seq_power[] = {
+	HX8363_SET_POWER, 0x81, 0x30, 0x08, 0x36, 0x01, 0x13, 0x10, 0x10,
+	0x35, 0x3D, 0x1A, 0x1A,
+};
+
+static u8 hx8363_seq_write_color_mode[] = {
+	HX8363_SET_COLMOD, 0x60,
+};
+
+static u8 hx8363_seq_write_madctl_control_setting[] = {
+	HX8363_SET_MADCTL, 0x0b,
+};
+
+static u8 hx8363_seq_set_source[] = {
+	HX8363_SET_SOURCE, 0x41, 0x19,
+};
+
+static u8 hx8363_seq_set_power_option[] = {
+	HX8363_SET_POWER_OPTION, 0x00, 0x10,
+};
+
+static u8 hx8363_seq_set_rgb_if[] = {
+	HX8363_SET_RGB_IF, 0x01,
+};
+
+static u8 hx8363_seq_panel_waveform_cycle[] = {
+	HX8363_SET_DISPLAY_WAVEFORM_CYC, 0x01, 0x12, 0x72, 0x12, 0x06, 
+	0x03,  0x54, 0x03, 0x4E, 0x00, 0x00,
+};
+
+static u8 hx8363_seq_vcom[] = {
+	HX8363_SET_VCOM, 0x33,
+};
+
+static u8 hx8363_seq_set_panel[] = {
+	HX8363_SET_PANEL, 0x02,
+};
+
+//Add 120 ms Delay
+
+static u8 hx8363_seq_gamma_curve_related[] = {
+	HX8363_SET_GAMMA_CURVE_RELATED, 0x01, 0x07, 0x4C, 0xB0, 0x36, 0x3F,
+	0x06, 0x49, 0x51, 0x96, 0x18, 0xD8, 0x18, 0x50, 0x13, 0x01, 0x07,
+	0x4C, 0xB0, 0x36, 0x3F, 0x06, 0x49, 0x51, 0x96, 0x18, 0xD8, 0x18,
+	0x50, 0x13,
+};
+//Add 150ms delay 
+//	HX8363_SET_SLEEP_OUT,
+
+//Add 200ms delay 
+// HX8363_SET_DISPLAY_ON
+
+////////////////////
+
 
 static int hx8357_spi_write_then_read(struct lcd_device *lcdev,
 				u8 *txbuf, u16 txlen,
@@ -534,6 +623,101 @@ static int hx8369_lcd_init(struct lcd_device *lcdev)
 	return 0;
 }
 
+static int hx8363_lcd_init(struct lcd_device *lcdev)
+{
+	int ret;
+	struct hx8357_data *lcd = lcd_get_data(lcdev);
+
+	/*
+	 * Set the interface selection pins to SPI mode, with three
+	 * wires
+	 */
+	if (lcd->use_im_pins) {
+		gpio_set_value_cansleep(lcd->im_pins[0], 1);
+		gpio_set_value_cansleep(lcd->im_pins[1], 1);
+		gpio_set_value_cansleep(lcd->im_pins[2], 0);
+	}
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_extension_command,
+				ARRAY_SIZE(hx8363_seq_extension_command));
+	if (ret < 0)
+		return ret;
+	
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_power,
+				ARRAY_SIZE(hx8363_seq_power));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_write_color_mode,
+				ARRAY_SIZE(hx8363_seq_write_color_mode));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_write_madctl_control_setting,
+				ARRAY_SIZE(hx8363_seq_write_madctl_control_setting));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_set_source,
+				ARRAY_SIZE(hx8363_seq_set_source));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_set_power_option,
+				ARRAY_SIZE(hx8363_seq_set_power_option));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_set_rgb_if,
+				ARRAY_SIZE(hx8363_seq_set_rgb_if));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_panel_waveform_cycle,
+				ARRAY_SIZE(hx8363_seq_panel_waveform_cycle));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_vcom,
+				ARRAY_SIZE(hx8363_seq_vcom));
+	if (ret < 0)
+		return ret;
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_set_panel,
+				ARRAY_SIZE(hx8363_seq_set_panel));
+	if (ret < 0)
+		return ret;
+
+	usleep_range(1000, 1200);
+
+	ret = hx8357_spi_write_array(lcdev, hx8363_seq_gamma_curve_related,
+				ARRAY_SIZE(hx8363_seq_gamma_curve_related));
+	if (ret < 0)
+		return ret;
+
+	usleep_range(1500, 1800);
+	/*Maybe add here the POWER command.*/
+
+	ret = hx8357_spi_write_byte(lcdev, HX8363_EXIT_SLEEP_MODE);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * The controller needs 120ms to fully recover from exiting sleep mode
+	 */
+	msleep(120);
+
+	ret = hx8357_spi_write_byte(lcdev, HX8363_SET_DISPLAY_ON);
+	if (ret < 0)
+		return ret;
+
+	/*
+	Todo : if there is a problem, check the order of the init code.
+	*/
+
+	return 0;
+}
+
 #define POWER_IS_ON(pwr)	((pwr) <= FB_BLANK_NORMAL)
 
 static int hx8357_set_power(struct lcd_device *lcdev, int power)
@@ -575,6 +759,10 @@ static const struct of_device_id hx8357_dt_ids[] = {
 		.compatible = "himax,hx8369",
 		.data = hx8369_lcd_init,
 	},
+	{
+		.compatible = "himax,hx8363",
+		.data = hx8363_lcd_init,
+	},	
 	{},
 };
 MODULE_DEVICE_TABLE(of, hx8357_dt_ids);
@@ -646,7 +834,7 @@ static int hx8357_probe(struct spi_device *spi)
 		lcd->use_im_pins = 0;
 	}
 
-	lcdev = devm_lcd_device_register(&spi->dev, "mxsfb", &spi->dev, lcd,
+	lcdev = devm_lcd_device_register(&spi->dev, dev_name(&spi->dev), &spi->dev, lcd,
 					&hx8357_ops);
 	if (IS_ERR(lcdev)) {
 		ret = PTR_ERR(lcdev);
